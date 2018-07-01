@@ -70,7 +70,7 @@ $ cat res/values/strings.xml
 
 Now I am going to be really honest with you here: I don't know much about smali. To my untrained eye, it seems like a crazy programming language. Like, just look at it, it makes no sense!
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-1/smali1.png) 
+![](smali1.png) 
 
 Uh... OK, so `const-string` is how you have constant strings, I guess. Above is the first flag, which I found because I read a file called `MainSomethingSomething` in the `challenge1` folder. Let's try and find more of these precious `const-strings`. I've gone into the `challenge1` folder to run this command to exclude the base Java classes that are also in the APK.
 
