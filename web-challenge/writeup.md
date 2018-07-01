@@ -4,7 +4,7 @@ While I was stuck with some technical issues on Mobile 4, I decided it would be 
 
 The challenge is setup in a web server, located at `http://159.203.178.9/`. When visited, the page will respond with the following image:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/web-challenge/hello.png) 
+![](hello.png) 
 
 It gives us a few hints, but the main takeaway is that there is a service within this server that allows for the storage of notes. We can look at the response headers to see if there is any more information in there:
 
@@ -39,7 +39,7 @@ $ wfuzz --hc 404 -z file,wordlist.txt http://159.203.178.9/FUZZ.html
 ```
 I found three files: `rpc.php` which responds with a `415` status code and `index.html` and `README.html` which respond with a `200`. Looking at the readme file we can observe some documentation:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/web-challenge/documentation.png) 
+![](documentation.png) 
 
 The documentation is very verbose, but reading through it we can get several important points:
 
@@ -132,15 +132,15 @@ And there is the truth. Version two *is* enabled and one of the differences is t
 
 Remembering from before, the epoch we're after is `1528911533`. Using the version two of the API and assuming that the app will sort the keys as strings, I input a "low" value which is likely to be before, such as `0`:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/web-challenge/before.png) 
+![](before.png) 
 
 I now will input a letter that I consider to be high. Sorting like strings, generally lowercase `z` is the "highest" value. We can confirm this works:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/web-challenge/Screenshot_2018-06-28_11-16-23.png) 
+![](Screenshot_2018-06-28_11-16-23.png) 
 
 I've made mentions of "high" and "low" values. As I mentioned on the mobile writeups, all characters in the ascii space have a number, which can be looked up in an ascii table. Digits from 0 to 9 have a value that is lower than uppercase letters, and uppercase letters have a lower value than lowercase letters. 
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/web-challenge/imgs/20180628-121127.png) 
+![](imgs/20180628-121127.png) 
 
 That being said, the this logic fails on the first character, possibly due to some PHP type juggling issue, where PHP deems numbers to be always higher than strings, or something like that. With that in mind, the python code to solve the challenge looks as follows:
 
@@ -249,4 +249,4 @@ Content-Type: application/json
 
 It is base64 encoded and it decodes to: `702-CTF-FLAG: NP26nDOI6H5ASemAOW6g`. We can now paste that into the thing and get the green tick:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/web-challenge/done2.png) 
+![](done2.png) 
