@@ -108,11 +108,11 @@ I gotta be honest, when I first saw the `lib/` folder I thought it was something
 
 Here you can choose one of several architectures the libnative library has been compiled to, in my case because I am using Hopper and I know Hopper's strong suit is the ARM architecture I'll open `armeabi-v7a/libnative-lib.so`. I don't really know what the options are at the prompt so I just click OK.
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-1/hopper1.png) 
+![](hopper1.png) 
 
 There you can see a few tabs. `Labels` contains labels present in the binary, and `Strs` contains strings. When I click the window and look for strings I can immediately see the second flag.
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-1/hopper2.png) 
+![](hopper2.png) 
 
 If we put all the parts of the flag we have now together, it looks like this:
 
@@ -122,15 +122,15 @@ flag{so_much_static_analysis_much_wow
 
 It seems to me we're missing the end of the string. There's another tab next to `Strs` called `Procs`, which is short for procedures, which is an assembly term for functions or methods. I clicked that and I saw something that looked weird to me. Right next to a `hackerone` method there were a bunch of single-letter methods, like this:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-1/hopper3.png) 
+![](hopper3.png) 
 
 Clicking one of the methods takes us to its disasembly:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-1/hopper4.png) 
+![](hopper4.png) 
 
 It seems to me that it is using the `movs` instruction to move a value into a register, in this case `r0`. `r0` is the register used for storing return values in the [ARM calling convention](https://wiki.osdev.org/ARM_Overview#Calling_Convention_Cheat_Sheets), so it seems it is returning a value, which looks suspiciously like the hexadecimal value of an ASCII character. I will use an [ASCII table](https://www.rapidtables.com/code/text/ascii-table.html) to look it up, like below:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-1/asciitable.png) 
+![](asciitable.png) 
 
 It shows that it corresponds to an underscore. I click the next function down, `z()` and the char corresponds to an `a` character. Carrying on with the functions in order, we get a stream of bytes that looks like: `_and_cool}`. With this, we complete the flag.
 
@@ -138,4 +138,4 @@ It shows that it corresponds to an underscore. I click the next function down, `
 flag{so_much_static_analysis_much_wow_and_cool}
 ```
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-1/done.png) 
+![](done.png) 
