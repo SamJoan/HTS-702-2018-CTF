@@ -6,7 +6,7 @@ I started the second challenge immediately after finishing that last writeup, an
 
 The second challenge also consists of a simple APK file. I installed it on my test device by downloading the APK and then running `adb install -r challenge2_release.apk`. You should have ADB installed from the last chapter. The challenge looks like this:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-2/screen.png) 
+![](screen.png) 
 
 I thought I'd `apktool` decode same as I explained on the previous section, and I tried to dive right in to the smali code. At first I noticed that there were a few embedded libraries, like libsodium. Libsodium is a cryptography library and in my opinion it is relatively secure. Thinking ahead, this means two things: the challenge will involve cryptography, and the cryptographic primitives in use are going to be *strong*. 
 
@@ -220,7 +220,7 @@ Now I run the app again, type in 000 000 and wait for victory. Afther what seems
 
 And, done:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-2/resolved.png) 
+![](resolved.png) 
 
 For reference, here you can see the working, final version of the `onComplete` method. I've done my best removing the bad language from the comments but apologies if something does slip by.
 
