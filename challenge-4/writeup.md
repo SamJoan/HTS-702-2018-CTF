@@ -65,7 +65,7 @@ Your emulator is out of date, please update by launching Android Studio:
 
 Despite these errors we get a fine looking emulator:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-4/Screenshot_2018-06-28_14-41-13.png) 
+![](Screenshot_2018-06-28_14-41-13.png) 
 
 We can now install the vulnerable APK and create a fake flag, for testing. I created this script to automate the setup:
 
@@ -88,7 +88,7 @@ $ chmod +x setup.sh
 $ ./setup.sh
 ```
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-4/Screenshot_2018-06-28_14-59-44.png) 
+![](Screenshot_2018-06-28_14-59-44.png) 
 
 Sweet. Let's have a look at this thing, and see where the vulnerabilities are most likely to be. Like on previous writeups for this CTF I will run the APK through `apktool` and `procyon` just to have better access to the app. These outputs will be in `challenge4_release` and `final-source` respectively. 
 
@@ -336,4 +336,4 @@ And with that, we've done it. We send our evil APK to our unsuspecting victim an
 
 ```
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-4/Screenshot_2018-06-30_10-38-27.png) 
+![](Screenshot_2018-06-30_10-38-27.png) 
