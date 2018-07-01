@@ -17,7 +17,7 @@ I decided to go ahead with the mobile challenges because I have been procrastina
 ## Getting Started
 Once you register to the CTF you will be able to access the challenges section. You  can then download the `.apk` file, as below:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-1/download.png) 
+![](download.png) 
 
 You may not know this, but `.apk` files are the standard format for Android applications. I'm no expert, but I know that I know that there is this awesome tool out there called `apktool`, which we can install by running `apt install apktool` in debian, or we can install by [other means](https://ibotpeaches.github.io/Apktool/install/). We open up a shell, navigate the shell to the directory where the apk lives, and run:
 
