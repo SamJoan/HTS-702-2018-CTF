@@ -120,4 +120,4 @@ secr3t_littl3_th4ng
 
 Of course we know the flag format and we can infer the key is `flag{secr3t_littl3_th4ng}`. I type that in and, BAM! done:
 
-![](/home/user/work/shared/flags/HTS-702-2018-CTF/challenge-3/done.png) 
+![](done.png) 
